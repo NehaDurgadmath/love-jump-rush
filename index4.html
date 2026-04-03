@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Love Jump Rush 💕</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; background: #080015; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+#gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
+canvas { width: 100%; height: 100%; display: block; }
+.screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+#homeScreen { background: linear-gradient(135deg, #080015, #150830, #080015); }
+.game-title { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 900; background: linear-gradient(135deg, #FF6B9D, #C44FD4, #FF8FAB); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 0.4rem; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.04);} }
+.game-subtitle { color: rgba(255,255,255,0.4); font-size: clamp(0.8rem, 2vw, 1rem); margin-bottom: 2rem; text-align: center; }
+.level-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2rem; max-width: 600px; }
+.pill { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 0.25rem 0.7rem; font-size: 0.68rem; color: rgba(255,255,255,0.4); }
+.pill.highlight { border-color: rgba(255,107,157,0.4); color: #FF6B9D; background: rgba(255,107,157,0.08); }
+.char-select { display: flex; gap: 3rem; margin-bottom: 2rem; }
+.char-btn { width: clamp(130px, 15vw, 165px); height: clamp(150px, 18vw, 185px); border-radius: 24px; border: 2px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; transition: all 0.3s; color: white; }
+.char-btn:hover, .char-btn.selected { border-color: #FF6B9D; background: rgba(255,107,157,0.12); transform: translateY(-8px); box-shadow: 0 14px 38px rgba(255,107,157,0.25); }
+.char-emoji { font-size: clamp(2.5rem, 5vw, 3.8rem); }
+.char-name { font-size: 0.9rem; font-weight: 800; color: rgba(255,255,255,0.85); }
+.char-desc { font-size: 0.67rem; color: rgba(255,255,255,0.35); text-align: center; padding: 0 0.5rem; line-height: 1.4; }
+.play-btn { padding: 1rem 4rem; background: linear-gradient(135deg, #FF6B9D, #C44FD4); border: none; border-radius: 30px; color: white; font-size: 1.1rem; font-weight: 900; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 24px rgba(196,79,212,0.35); }
+.play-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 34px rgba(196,79,212,0.45); }
+.play-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+.floating-hearts { position: absolute; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+.heart { position: absolute; animation: floatUp linear infinite; opacity: 0; }
+@keyframes floatUp { 0%{transform:translateY(100vh) rotate(0deg);opacity:0;}10%{opacity:0.5;}90%{opacity:0.5;}100%{transform:translateY(-60px) rotate(360deg);opacity:0;} }
+#levelScreen { background: rgba(5,0,15,0.96); backdrop-filter: blur(15px); display: none; }
+.level-complete-badge { background: rgba(255,107,157,0.15); border: 2px solid rgba(255,107,157,0.35); border-radius: 20px; padding: 0.45rem 1.5rem; color: #FF6B9D; font-size: 0.88rem; font-weight: 800; margin-bottom: 0.8rem; }
+.level-complete-title { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; background: linear-gradient(135deg, #FF6B9D, #C44FD4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.4rem; text-align: center; }
+.level-complete-score { color: rgba(255,255,255,0.55); font-size: 1rem; margin-bottom: 1.2rem; }
+.cutscene { font-size: clamp(4rem, 11vw, 8rem); margin-bottom: 0.8rem; animation: cutBounce 0.6s ease-in-out infinite alternate; text-align: center; letter-spacing: 0.8rem; }
+@keyframes cutBounce { 0%{transform:translateY(0) scale(1);}100%{transform:translateY(-18px) scale(1.06);} }
+.cutscene-msg { color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-bottom: 0.5rem; font-style: italic; }
+.next-level-info { color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-bottom: 1.2rem; }
+.next-btn { padding: 0.9rem 3rem; background: linear-gradient(135deg, #FF6B9D, #C44FD4); border: none; border-radius: 28px; color: white; font-size: 1rem; font-weight: 900; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 20px rgba(196,79,212,0.35); }
+.next-btn:hover { transform: translateY(-3px); }
+#gameOverScreen { background: rgba(5,0,15,0.96); backdrop-filter: blur(12px); display: none; }
+.cry-scene { font-size: clamp(3rem, 9vw, 7rem); margin-bottom: 0.8rem; animation: cryShake 0.25s ease-in-out infinite alternate; }
+@keyframes cryShake { 0%{transform:rotate(-6deg) scale(1);}100%{transform:rotate(6deg) scale(1.04);} }
+.go-title { font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; background: linear-gradient(135deg, #FF6B9D, #C44FD4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+.go-info { color: rgba(255,255,255,0.6); font-size: 1rem; margin-bottom: 0.3rem; }
+.go-best { color: #FF6B9D; font-size: 0.9rem; font-weight: 700; margin-bottom: 1.8rem; }
+#winScreen { background: rgba(5,0,15,0.96); backdrop-filter: blur(15px); display: none; }
+.win-title { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 900; background: linear-gradient(135deg, #FFD700, #FF6B9D, #C44FD4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 0.5rem; }
+.win-scene { font-size: clamp(3.5rem, 10vw, 7.5rem); margin-bottom: 0.8rem; animation: winPulse 0.7s ease-in-out infinite alternate; }
+@keyframes winPulse { 0%{transform:scale(1);}100%{transform:scale(1.1);} }
+.win-info { color: rgba(255,255,255,0.6); font-size: 1rem; margin-bottom: 0.3rem; }
+.win-coins { color: #F4D03F; font-size: 0.9rem; font-weight: 700; margin-bottom: 1.8rem; }
+.btn-row { display: flex; gap: 1rem; }
+.retry-btn { padding: 0.85rem 2.2rem; background: linear-gradient(135deg, #FF6B9D, #C44FD4); border: none; border-radius: 25px; color: white; font-size: 0.95rem; font-weight: 800; cursor: pointer; transition: all 0.3s; }
+.retry-btn:hover { transform: translateY(-2px); }
+.menu-btn { padding: 0.85rem 2.2rem; background: transparent; border: 2px solid rgba(255,255,255,0.15); border-radius: 25px; color: rgba(255,255,255,0.6); font-size: 0.95rem; font-weight: 800; cursor: pointer; transition: all 0.3s; }
+.menu-btn:hover { border-color: #FF6B9D; color: #FF6B9D; }
+</style>
+</head>
+<body>
+<div id="gameContainer">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- HOME -->
+  <div class="screen" id="homeScreen">
+    <div class="floating-hearts" id="floatingHearts"></div>
+    <div class="game-title">Love Jump Rush 💕</div>
+    <div class="game-subtitle">Jump · Collect Gifts · Survive 10 Levels of Love!</div>
+    <div class="level-pills">
+      <div class="pill highlight">L1 0.5x 30s</div>
+      <div class="pill">L2 1x 60s</div>
+      <div class="pill">L3 2x 90s</div>
+      <div class="pill">L4 3x 90s</div>
+      <div class="pill">L5 5x 120s</div>
+      <div class="pill">L6 6x 120s</div>
+      <div class="pill">L7 7x 120s</div>
+      <div class="pill">L8 8x 120s</div>
+      <div class="pill">L9 9x 120s</div>
+      <div class="pill highlight">L10 10x 150s 👑</div>
+    </div>
+    <div class="char-select">
+      <button class="char-btn" id="girlBtn" onclick="selectChar('girl')">
+        <div class="char-emoji">👧</div>
+        <div class="char-name">Play as Girl</div>
+        <div class="char-desc">Collect tech gifts<br>for your BF 💙</div>
+      </button>
+      <button class="char-btn" id="boyBtn" onclick="selectChar('boy')">
+        <div class="char-emoji">👦</div>
+        <div class="char-name">Play as Boy</div>
+        <div class="char-desc">Collect sweet gifts<br>for your GF 💗</div>
+      </button>
+    </div>
+    <button class="play-btn" id="playBtn" onclick="startGame()" disabled>▶ Start Playing!</button>
+  </div>
+
+  <!-- LEVEL COMPLETE -->
+  <div class="screen" id="levelScreen">
+    <div class="level-complete-badge" id="lcBadge">Level 1 Complete!</div>
+    <div class="level-complete-title" id="lcTitle">Amazing! 🎉</div>
+    <div class="level-complete-score" id="lcScore">Score: 0</div>
+    <div class="cutscene" id="lcCutscene">👧💝👦</div>
+    <div class="cutscene-msg" id="lcMsg">You delivered the gifts! 💕</div>
+    <div class="next-level-info" id="lcNext">Next: Level 2 — Speed 1x ⚡</div>
+    <button class="next-btn" onclick="nextLevel()">Next Level ➡️</button>
+  </div>
+
+  <!-- WIN -->
+  <div class="screen" id="winScreen">
+    <div class="win-title">🏆 YOU WON ALL 10 LEVELS! 🏆</div>
+    <div class="win-scene" id="winScene">👧💕👦</div>
+    <div class="win-info" id="winInfo">Total Score: 0</div>
+    <div class="win-coins" id="winCoins">Coins: 0 🪙</div>
+    <div class="btn-row">
+      <button class="retry-btn" onclick="restartFull()">🔄 Play Again</button>
+      <button class="menu-btn" onclick="goToMenu()">🏠 Menu</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div class="screen" id="gameOverScreen">
+    <div class="cry-scene" id="cryScene">😭</div>
+    <div class="go-title">Game Over! 💔</div>
+    <div class="go-info" id="goInfo">Score: 0</div>
+    <div class="go-best" id="goBest">Best: 0 🏆</div>
+    <div class="btn-row">
+      <button class="retry-btn" onclick="retryLevel()">🔄 Retry Level</button>
+      <button class="menu-btn" onclick="goToMenu()">🏠 Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CANVAS ────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, GROUND_Y;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  GROUND_Y = H * 0.73;
+  if (player) player.groundY = GROUND_Y;
+  if (bgStars.length === 0) initStars();
+}
+window.addEventListener('resize', () => { resize(); });
+
+// ── LEVELS ────────────────────────────────────────────
+const LEVELS = [
+  { num:1,  speed:0.5,  duration:1800,  label:'Level 1 — Easy Peasy 🌸',     spawnGap:280 },
+  { num:2,  speed:1.0,  duration:3600,  label:'Level 2 — Warming Up 💕',      spawnGap:260 },
+  { num:3,  speed:2.0,  duration:5400,  label:'Level 3 — Getting Spicy 🔥',   spawnGap:240 },
+  { num:4,  speed:3.0,  duration:5400,  label:'Level 4 — Fast & Furious ⚡',  spawnGap:220 },
+  { num:5,  speed:5.0,  duration:7200,  label:'Level 5 — Chaos Begins 💀',    spawnGap:200 },
+  { num:6,  speed:6.0,  duration:7200,  label:'Level 6 — Getting Real 😤',    spawnGap:185 },
+  { num:7,  speed:7.0,  duration:7200,  label:'Level 7 — Insane Mode 🤯',     spawnGap:170 },
+  { num:8,  speed:8.0,  duration:7200,  label:'Level 8 — No Mercy 💥',        spawnGap:155 },
+  { num:9,  speed:9.0,  duration:7200,  label:'Level 9 — Almost There 😤',    spawnGap:140 },
+  { num:10, speed:10.0, duration:9000,  label:'Level 10 — FINAL ROUND 👑',    spawnGap:125 },
+];
+
+// ── STATE ─────────────────────────────────────────────
+let gameState = 'home';
+let selectedChar = null;
+let currentLevel = 0;
+let score = 0;
+let totalScore = 0;
+let bestScore = 0;
+let coins = 0;
+let health = 3;
+let speed = 0.5;
+let gameTime = 0;
+let combo = 0;
+let animFrame;
+let itemTimer = 0;
+let coinTimer = 0;
+let shakeAmount = 0;
+let items = [];
+let groundCoins = [];
+let particles = [];
+let messages = [];
+
+// ── AI ────────────────────────────────────────────────
+const ai = {
+  jumps:0, correct:0, hits:0, timer:0,
+  accuracy(){ return this.jumps===0?1:this.correct/this.jumps; },
+  adjust(){
+    this.timer++;
+    if(this.timer < 360) return;
+    this.timer = 0;
+    const acc = this.accuracy();
+    const base = LEVELS[currentLevel].speed;
+    if(acc > 0.82 && speed < base * 1.4){
+      speed = Math.min(speed + 0.25, base * 1.4);
+    } else if(acc < 0.3 && speed > base * 0.75){
+      speed = Math.max(speed - 0.2, base * 0.75);
+      showMsg('💪 Keep going!');
+    }
+  }
+};
+
+// ── CHARACTERS ────────────────────────────────────────
+const chars = {
+  girl:{
+    emoji:'👧', color:'#FF6B9D', partnerEmoji:'👦',
+    collect:['📱','💻','🎮','🎧','⌚','👟','🕶️','🖥️','🎵','💡'],
+    obstacles:['🐛','👾','🕷️','💀','🦠'],
+    kissScene:'👧💝👦', cryScene:'👧😭',
+    kissMsg:"You delivered the tech gifts! He loves you! 💙"
+  },
+  boy:{
+    emoji:'👦', color:'#4F9FD4', partnerEmoji:'👧',
+    collect:['🍫','🧸','❤️','🎁','💐','💌','🌹','🎀','💎','🍰'],
+    obstacles:['💔','🐍','👻','😈','🗡️'],
+    kissScene:'👦💝👧', cryScene:'👦😭',
+    kissMsg:"You delivered the sweet gifts! She loves you! 💗"
+  }
+};
+
+// ── PLAYER ────────────────────────────────────────────
+const player = {
+  x:0, y:0, groundY:0,
+  w:65, h:65,
+  vy:0, grounded:true,
+  canDoubleJump:false, hasDoubleJumped:false,
+  trail:[],
+
+  init(){
+    this.x = W * 0.13;
+    this.groundY = GROUND_Y;
+    this.y = this.groundY;
+  },
+
+  jump(){
+    if(this.grounded){
+      this.vy = -(H * 0.04);
+      this.grounded = false;
+      this.canDoubleJump = true;
+      this.hasDoubleJumped = false;
+      ai.jumps++;
+      playSound('jump');
+    } else if(this.canDoubleJump && !this.hasDoubleJumped){
+      this.vy = -(H * 0.03);
+      this.hasDoubleJumped = true;
+      this.canDoubleJump = false;
+      playSound('jump');
+      spawnParticles(this.x+this.w/2, this.y+this.h/2, chars[selectedChar].color, 6);
+      showMsg('💨 Double Jump!', chars[selectedChar].color);
+    }
+  },
+
+  update(){
+    this.trail.push({x:this.x+this.w/2, y:this.y+this.h/2, a:0.6});
+    if(this.trail.length > 7) this.trail.shift();
+    this.trail.forEach(t => t.a -= 0.12);
+
+    this.vy += H * 0.0016;
+    this.y += this.vy;
+
+    if(this.y >= this.groundY){
+      this.y = this.groundY;
+      this.vy = 0;
+      this.grounded = true;
+      this.canDoubleJump = false;
+      this.hasDoubleJumped = false;
+    }
+  },
+
+  draw(){
+    const c = chars[selectedChar];
+
+    // Trail
+    this.trail.forEach((t,i) => {
+      ctx.globalAlpha = Math.max(0, t.a * 0.28);
+      ctx.fillStyle = c.color;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 8-i, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // Shadow
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(this.x+this.w/2, this.groundY+64, 28, 9, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Emoji with squish
+    const squish = this.grounded ? 1.08 : (this.vy < 0 ? 0.82 : 1.0);
+    ctx.save();
+    ctx.translate(this.x+this.w/2, this.y+this.h/2);
+    ctx.scale(squish, 2-squish);
+    ctx.font = `${this.w}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(c.emoji, 0, 0);
+    ctx.restore();
+
+    // Double jump hint above player
+    if(!this.grounded && this.canDoubleJump && !this.hasDoubleJumped){
+      ctx.font = `bold ${Math.max(11, W*0.011)}px Segoe UI`;
+      ctx.fillStyle = `${c.color}CC`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('⬆ TAP AGAIN!', this.x+this.w/2, this.y - 8);
+    }
+  }
+};
+
+// ── SPAWN ─────────────────────────────────────────────
+function spawnItem(){
+  const c = chars[selectedChar];
+  const obstacleChance = 0.25 + currentLevel * 0.02;
+  const isObstacle = Math.random() < obstacleChance;
+  const isFake = !isObstacle && Math.random() < 0.07;
+  const roll = Math.random();
+
+  let yPos;
+  if(isObstacle){
+    yPos = roll < 0.6 ? GROUND_Y + 5 : GROUND_Y - H*0.17;
+  } else {
+    if(roll < 0.38)      yPos = GROUND_Y + 5;
+    else if(roll < 0.72) yPos = GROUND_Y - H*0.21;
+    else                 yPos = GROUND_Y - H*0.37;
+  }
+
+  let emoji, type, pts;
+  if(isObstacle){
+    emoji = c.obstacles[Math.floor(Math.random()*c.obstacles.length)];
+    type = 'obstacle'; pts = -25;
+  } else if(isFake){
+    emoji = '🎀'; type = 'fake'; pts = -15;
+  } else {
+    emoji = c.collect[Math.floor(Math.random()*c.collect.length)];
+    type = 'collect';
+    const isHigh = yPos < GROUND_Y - H*0.32;
+    pts = isHigh ? (45 + currentLevel*15) : (20 + currentLevel*10);
+  }
+
+  const sz = Math.min(W*0.054, 54);
+  items.push({
+    x: W+30, y: yPos-sz,
+    w: sz, h: sz,
+    emoji, type, pts,
+    done: false,
+    bob: Math.random()*Math.PI*2,
+    isHigh: yPos < GROUND_Y - H*0.32
+  });
+}
+
+function spawnCoin(){
+  const yPos = Math.random() < 0.5
+    ? GROUND_Y - H*0.19
+    : GROUND_Y - H*0.1;
+  groundCoins.push({
+    x: W+20, y: yPos,
+    done: false,
+    bob: Math.random()*Math.PI*2
+  });
+}
+
+// ── PARTICLES & MESSAGES ──────────────────────────────
+function spawnParticles(x, y, color, n=7){
+  for(let i=0;i<n;i++){
+    const a = (Math.PI*2/n)*i;
+    particles.push({
+      x, y,
+      vx: Math.cos(a)*(2+Math.random()*3),
+      vy: Math.sin(a)*(2+Math.random()*3)-1.5,
+      a:1, color,
+      emoji:['✨','💫','⭐','💕','🌟'][Math.floor(Math.random()*5)]
+    });
+  }
+}
+
+function showMsg(text, color='#FF6B9D'){
+  messages.push({text, color, x:W/2, y:H/2-90, a:1, vy:-1.4});
+}
+
+// ── SOUND ─────────────────────────────────────────────
+const actx = new (window.AudioContext||window.webkitAudioContext)();
+function playSound(type){
+  try{
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.connect(g); g.connect(actx.destination);
+    const t = actx.currentTime;
+    if(type==='jump'){
+      o.frequency.setValueAtTime(350,t);
+      o.frequency.exponentialRampToValueAtTime(560,t+0.13);
+      g.gain.setValueAtTime(0.1,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+    } else if(type==='collect'){
+      o.frequency.setValueAtTime(500,t);
+      o.frequency.exponentialRampToValueAtTime(760,t+0.12);
+      g.gain.setValueAtTime(0.15,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+    } else if(type==='hit'){
+      o.type='sawtooth';
+      o.frequency.setValueAtTime(150,t);
+      o.frequency.exponentialRampToValueAtTime(40,t+0.3);
+      g.gain.setValueAtTime(0.2,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    } else if(type==='coin'){
+      o.frequency.setValueAtTime(700,t);
+      o.frequency.exponentialRampToValueAtTime(1050,t+0.08);
+      g.gain.setValueAtTime(0.1,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+    } else if(type==='levelup'){
+      o.frequency.setValueAtTime(400,t);
+      o.frequency.exponentialRampToValueAtTime(900,t+0.35);
+      g.gain.setValueAtTime(0.2,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+    }
+    o.start(t); o.stop(t+0.6);
+  }catch(e){}
+}
+
+// ── BACKGROUND ────────────────────────────────────────
+let bgStars = [];
+let groundOff = 0;
+
+function initStars(){
+  bgStars = [];
+  for(let i=0;i<90;i++){
+    bgStars.push({
+      x: Math.random()*W,
+      y: Math.random()*H*0.78,
+      r: Math.random()*2+0.3,
+      a: Math.random()*0.6+0.15,
+      da: (Math.random()-0.5)*0.012
+    });
+  }
+}
+
+function drawBG(){
+  const c = chars[selectedChar];
+  const lvl = currentLevel;
+
+  // Sky — gets darker red at higher levels
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  if(lvl >= 7){
+    grad.addColorStop(0, `#${Math.min(3+lvl,9)}0000${Math.max(15-lvl*2,5).toString(16).padStart(2,'0')}`);
+    grad.addColorStop(1, '#050005');
+  } else if(lvl >= 4){
+    grad.addColorStop(0, '#150010');
+    grad.addColorStop(1, '#080008');
+  } else {
+    grad.addColorStop(0, '#080015');
+    grad.addColorStop(0.65, '#130828');
+    grad.addColorStop(1, '#1a0535');
+  }
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+
+  // Stars
+  bgStars.forEach(s=>{
+    s.a += s.da;
+    if(s.a>0.88||s.a<0.08) s.da*=-1;
+    ctx.globalAlpha = s.a;
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // Ground glow
+  const gg = ctx.createLinearGradient(0, GROUND_Y+45, 0, H);
+  gg.addColorStop(0, `${c.color}18`);
+  gg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gg;
+  ctx.fillRect(0, GROUND_Y+45, W, H-GROUND_Y-45);
+
+  // Ground dashes
+  groundOff = (groundOff - speed + 36) % 36;
+  ctx.strokeStyle = `${c.color}55`;
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([20,16]);
+  ctx.lineDashOffset = -groundOff;
+  ctx.beginPath();
+  ctx.moveTo(0, GROUND_Y+62);
+  ctx.lineTo(W, GROUND_Y+62);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ── HUD ───────────────────────────────────────────────
+function drawHUD(){
+  const c = chars[selectedChar];
+  const lvl = LEVELS[currentLevel];
+  const fs = Math.min(W*0.022, 22);
+
+  // Score
+  ctx.fillStyle = 'white';
+  ctx.font = `bold ${fs}px Segoe UI`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`Score: ${score}`, W*0.02, H*0.025);
+
+  ctx.font = `bold ${fs*0.78}px Segoe UI`;
+  ctx.fillStyle = '#F4D03F';
+  ctx.fillText(`🪙 ${coins}`, W*0.02, H*0.068);
+
+  // Level label — center
+  ctx.textAlign = 'center';
+  ctx.font = `bold ${fs*0.76}px Segoe UI`;
+  ctx.fillStyle = c.color;
+  ctx.shadowColor = c.color;
+  ctx.shadowBlur = 6;
+  ctx.fillText(lvl.label, W/2, H*0.022);
+  ctx.shadowBlur = 0;
+
+  // Speed
+  ctx.font = `${fs*0.64}px Segoe UI`;
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText(`⚡ ${speed.toFixed(1)}x`, W/2, H*0.058);
+
+  // Health
+  ctx.textAlign = 'right';
+  ctx.font = `${fs*1.2}px serif`;
+  let h = '';
+  for(let i=0;i<3;i++) h += i<health?'❤️':'🖤';
+  ctx.fillText(h, W*0.98, H*0.018);
+
+  // Combo
+  if(combo > 1){
+    ctx.textAlign = 'center';
+    ctx.font = `bold ${fs + Math.min(combo*1.5,12)}px Segoe UI`;
+    ctx.fillStyle = '#FF6B9D';
+    ctx.shadowColor = '#FF6B9D';
+    ctx.shadowBlur = 14;
+    ctx.fillText(`🔥 ${combo}x COMBO!`, W/2, H*0.1);
+    ctx.shadowBlur = 0;
+  }
+
+  // Double jump available indicator
+  if(!player.grounded && player.canDoubleJump && !player.hasDoubleJumped){
+    ctx.textAlign = 'center';
+    ctx.font = `bold ${fs*0.85}px Segoe UI`;
+    ctx.fillStyle = c.color;
+    ctx.shadowColor = c.color;
+    ctx.shadowBlur = 10;
+    ctx.fillText('⬆️ DOUBLE JUMP READY!', W/2, H*0.17);
+    ctx.shadowBlur = 0;
+  }
+
+  // Level progress bar — bottom
+  const prog = Math.min(gameTime/lvl.duration, 1);
+  const bx=W*0.02, by=H-H*0.038, bw=W*0.96, bh=H*0.018;
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  rr(bx, by, bw, bh, 5); ctx.fill();
+
+  const barG = ctx.createLinearGradient(bx,0,bx+bw*prog,0);
+  barG.addColorStop(0, c.color);
+  barG.addColorStop(1, '#C44FD4');
+  ctx.fillStyle = barG;
+  rr(bx, by, bw*prog, bh, 5); ctx.fill();
+
+  // Time remaining
+  const secsLeft = Math.ceil((lvl.duration - gameTime)/60);
+  ctx.textAlign = 'right';
+  ctx.font = `${fs*0.62}px Segoe UI`;
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText(`${secsLeft}s left`, W*0.98, H-H*0.048);
+
+  // Jump hint at start
+  if(gameTime < 160){
+    ctx.textAlign = 'center';
+    ctx.font = `bold ${fs*0.78}px Segoe UI`;
+    ctx.fillStyle = `rgba(255,255,255,${Math.max(0, 0.7-gameTime/200)})`;
+    ctx.fillText('SPACE or CLICK to jump · TAP TWICE for Double Jump! 🆙', W/2, H*0.86);
+  }
+}
+
+function rr(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+// ── COLLISIONS ────────────────────────────────────────
+function checkCollisions(){
+  const pad=12;
+  const px=player.x+pad, py=player.y+pad;
+  const pw=player.w-pad*2, ph=player.h-pad*2;
+
+  items.forEach(item=>{
+    if(item.done) return;
+    if(px < item.x+item.w-6 && px+pw > item.x+6 &&
+       py < item.y+item.h-6 && py+ph > item.y+6){
+      item.done = true;
+      if(item.type==='collect'){
+        score += item.pts; combo++;
+        ai.correct++;
+        spawnParticles(item.x+item.w/2, item.y+item.h/2, '#FF6B9D');
+        showMsg(combo>2 ? `🔥 ${combo}x COMBO! +${item.pts}` : `+${item.pts} ✨`);
+        playSound('collect');
+      } else {
+        health--; combo=0; ai.hits++;
+        spawnParticles(item.x+item.w/2, item.y+item.h/2, '#FF4444', 10);
+        showMsg(item.type==='fake'?'😱 FAKE! Trap!':'💥 Ouch!', '#FF4444');
+        playSound('hit');
+        shakeAmount = 12;
+        if(health<=0) endGame();
+      }
+    }
+  });
+
+  const cs = W*0.03;
+  groundCoins.forEach(coin=>{
+    if(coin.done) return;
+    if(px<coin.x+cs*2 && px+pw>coin.x && py<coin.y+cs*2 && py+ph>coin.y){
+      coin.done=true; coins++;
+      playSound('coin');
+      spawnParticles(coin.x+cs, coin.y+cs, '#F4D03F', 5);
+    }
+  });
+}
+
+// ── GAME LOOP ─────────────────────────────────────────
+function gameLoop(){
+  if(gameState!=='playing') return;
+
+  gameTime++;
+  score++;
+
+  // Level complete check
+  if(gameTime >= LEVELS[currentLevel].duration){
+    levelComplete();
+    return;
+  }
+
+  ai.adjust();
+
+  // Spawn items
+  itemTimer++;
+  const lvlGap = LEVELS[currentLevel].spawnGap;
+  const spawnRate = Math.max(85, lvlGap - speed*3);
+  if(itemTimer >= spawnRate){
+    itemTimer=0;
+    spawnItem();
+  }
+
+  // Spawn coins
+  coinTimer++;
+  if(coinTimer >= 115){
+    coinTimer=0;
+    if(Math.random()<0.55) spawnCoin();
+  }
+
+  player.update();
+
+  items.forEach(item=>{
+    item.x -= speed;
+    if(item.type==='collect'){
+      item.y += Math.sin(gameTime*0.04+item.bob)*0.42;
+    }
+  });
+  items = items.filter(i=>!i.done && i.x>-85);
+
+  groundCoins.forEach(c=>c.x-=speed);
+  groundCoins = groundCoins.filter(c=>!c.done && c.x>-50);
+
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    p.vy+=0.1; p.a-=0.03;
+  });
+  particles = particles.filter(p=>p.a>0);
+
+  messages.forEach(m=>{ m.y+=m.vy; m.a-=0.016; });
+  messages = messages.filter(m=>m.a>0);
+
+  checkCollisions();
+
+  // DRAW
+  ctx.save();
+  if(shakeAmount>0){
+    ctx.translate((Math.random()-.5)*shakeAmount,(Math.random()-.5)*shakeAmount);
+    shakeAmount*=0.72;
+  }
+
+  drawBG();
+
+  // Coins
+  const coinSz = W*0.032;
+  groundCoins.forEach(coin=>{
+    if(coin.done) return;
+    const bob = Math.sin(gameTime*0.07+coin.bob)*5;
+    ctx.font=`${coinSz*2}px serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.shadowColor='#F4D03F'; ctx.shadowBlur=8;
+    ctx.fillText('🪙', coin.x+coinSz, coin.y+bob);
+    ctx.shadowBlur=0;
+  });
+
+  // Items
+  items.forEach(item=>{
+    if(item.done) return;
+    ctx.font=`${item.w}px serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    const good = item.type==='collect';
+    ctx.shadowColor = good ? chars[selectedChar].color : '#FF4444';
+    ctx.shadowBlur = good ? 22 : 14;
+    ctx.fillText(item.emoji, item.x+item.w/2, item.y+item.h/2);
+    ctx.shadowBlur=0;
+
+    if(good){
+      ctx.font=`${W*0.011}px Segoe UI`;
+      ctx.fillStyle='rgba(255,255,255,0.4)';
+      ctx.textAlign='center';
+      ctx.fillText(`+${item.pts}`, item.x+item.w/2, item.y+item.h+10);
+
+      // Double jump indicator on high items
+      if(item.isHigh){
+        ctx.font=`bold ${W*0.009}px Segoe UI`;
+        ctx.fillStyle='rgba(255,220,100,0.7)';
+        ctx.fillText('⬆⬆ DOUBLE JUMP', item.x+item.w/2, item.y-8);
+      }
+    }
+
+    if(item.type==='obstacle'){
+      ctx.font=`bold ${W*0.01}px Segoe UI`;
+      ctx.fillStyle='rgba(255,80,80,0.75)';
+      ctx.textAlign='center';
+      ctx.fillText('AVOID!', item.x+item.w/2, item.y-7);
+    }
+  });
+
+  player.draw();
+
+  // Particles
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.a;
+    ctx.font=`${W*0.015}px serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(p.emoji, p.x, p.y);
+  });
+  ctx.globalAlpha=1;
+
+  // Messages
+  messages.forEach(m=>{
+    ctx.globalAlpha=m.a;
+    ctx.font=`bold ${W*0.02}px Segoe UI`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle=m.color;
+    ctx.shadowColor=m.color; ctx.shadowBlur=12;
+    ctx.fillText(m.text, m.x, m.y);
+    ctx.shadowBlur=0;
+  });
+  ctx.globalAlpha=1;
+
+  drawHUD();
+  ctx.restore();
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ── LEVEL COMPLETE ────────────────────────────────────
+function levelComplete(){
+  gameState='levelcomplete';
+  cancelAnimationFrame(animFrame);
+  totalScore += score;
+  playSound('levelup');
+  const c = chars[selectedChar];
+  const isLast = currentLevel===LEVELS.length-1;
+
+  if(isLast){
+    document.getElementById('winScreen').style.display='flex';
+    document.getElementById('winScene').textContent = c.kissScene;
+    document.getElementById('winInfo').textContent = `Total Score: ${totalScore}`;
+    document.getElementById('winCoins').textContent = `Coins Collected: ${coins} 🪙`;
+    if(totalScore>bestScore) bestScore=totalScore;
+    return;
+  }
+
+  const next = LEVELS[currentLevel+1];
+  document.getElementById('levelScreen').style.display='flex';
+  document.getElementById('lcBadge').textContent = `Level ${currentLevel+1} Complete! ⭐`;
+  document.getElementById('lcTitle').textContent = `Amazing! Score: ${score} 🎉`;
+  document.getElementById('lcScore').textContent = `Total Score So Far: ${totalScore}`;
+  document.getElementById('lcCutscene').textContent = c.kissScene;
+  document.getElementById('lcMsg').textContent = c.kissMsg;
+  document.getElementById('lcNext').textContent = `Next: Level ${next.num} — Speed ${next.speed}x ⚡`;
+}
+
+function nextLevel(){
+  currentLevel++;
+  document.getElementById('levelScreen').style.display='none';
+  startLevelPlay();
+}
+
+// ── GAME OVER ─────────────────────────────────────────
+function endGame(){
+  gameState='gameover';
+  cancelAnimationFrame(animFrame);
+  const c = chars[selectedChar];
+  if(score>bestScore) bestScore=score;
+  document.getElementById('gameOverScreen').style.display='flex';
+  document.getElementById('cryScene').textContent = c.cryScene;
+  document.getElementById('goInfo').textContent = `Score: ${score}  ·  Level ${currentLevel+1}  ·  Coins: ${coins} 🪙`;
+  document.getElementById('goBest').textContent = `Best Score: ${bestScore} 🏆`;
+}
+
+function retryLevel(){
+  document.getElementById('gameOverScreen').style.display='none';
+  startLevelPlay();
+}
+
+// ── START ─────────────────────────────────────────────
+function startLevelPlay(){
+  gameState='playing';
+  const lvl = LEVELS[currentLevel];
+  score=0; health=3; speed=lvl.speed;
+  gameTime=0; combo=0;
+  items=[]; groundCoins=[]; particles=[]; messages=[];
+  itemTimer=0; coinTimer=0; shakeAmount=0;
+  player.y=player.groundY; player.vy=0;
+  player.grounded=true; player.canDoubleJump=false;
+  player.hasDoubleJumped=false; player.trail=[];
+  ai.jumps=0; ai.correct=0; ai.hits=0; ai.timer=0;
+  showMsg(`Level ${lvl.num} — GO! 🚀`, '#FF6B9D');
+  cancelAnimationFrame(animFrame);
+  gameLoop();
+}
+
+function startGame(){
+  currentLevel=0; totalScore=0; coins=0;
+  document.getElementById('homeScreen').style.display='none';
+  startLevelPlay();
+}
+
+function restartFull(){
+  document.getElementById('winScreen').style.display='none';
+  currentLevel=0; totalScore=0; coins=0;
+  startLevelPlay();
+}
+
+function goToMenu(){
+  cancelAnimationFrame(animFrame);
+  gameState='home';
+  ['homeScreen','gameOverScreen','levelScreen','winScreen'].forEach(id=>{
+    document.getElementById(id).style.display = id==='homeScreen'?'flex':'none';
+  });
+}
+
+function selectChar(char){
+  selectedChar=char;
+  document.getElementById('girlBtn').classList.toggle('selected', char==='girl');
+  document.getElementById('boyBtn').classList.toggle('selected', char==='boy');
+  document.getElementById('playBtn').disabled=false;
+}
+
+// ── CONTROLS ──────────────────────────────────────────
+document.addEventListener('keydown', e=>{
+  if((e.code==='Space'||e.code==='ArrowUp') && gameState==='playing'){
+    e.preventDefault(); player.jump();
+  }
+});
+canvas.addEventListener('click', ()=>{ if(gameState==='playing') player.jump(); });
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  if(gameState==='playing') player.jump();
+}, {passive:false});
+
+// ── HOME HEARTS ───────────────────────────────────────
+function initHearts(){
+  const container = document.getElementById('floatingHearts');
+  const emojis=['💕','💗','💖','💝','✨','🌸','💫','🎀','⭐','💙'];
+  for(let i=0;i<22;i++){
+    const h=document.createElement('div');
+    h.className='heart';
+    h.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    h.style.left=Math.random()*100+'%';
+    h.style.animationDuration=(5+Math.random()*8)+'s';
+    h.style.animationDelay=(-Math.random()*10)+'s';
+    h.style.fontSize=(0.9+Math.random()*1.4)+'rem';
+    container.appendChild(h);
+  }
+}
+initHearts();
+
+// ── INIT ──────────────────────────────────────────────
+resize();
+player.init();
+initStars();
+ctx.fillStyle='#080015';
+ctx.fillRect(0,0,W,H);
+</script>
+</body>
+</html>
